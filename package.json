@@ -1,0 +1,110 @@
+{
+  "name": "feed-herder",
+  "version": "0.0.1",
+  "description": "herd your feeds",
+  "main": "index.js",
+  "scripts": {
+    "start": "cross-env NODE_ENV=development npm run watch",
+    "build": "npm-run-all --parallel build:*",
+    "build:js": "cross-env NODE_ENV=production webpack -p --config webpack.config.js",
+    "clean": "rimraf addon.xpi build web-ext-artifacts",
+    "format": "prettier --write \"src/**/*.js\"",
+    "lint": "npm-run-all lint:*",
+    "lint:js": "eslint --color .",
+    "package": "npm-run-all clean:extension build:extension && web-ext build --overwrite-dest --source-dir=build/extension && mv web-ext-artifacts/*.zip ./addon.xpi",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "validate": "npm-run-all validate:*",
+    "validate:extension": "addons-linter build --self-hosted",
+    "watch": "npm-run-all --parallel watch:*",
+    "watch:js": "webpack --watch --progress --colors --config webpack.config.js",
+    "watch:lint": "npm-run-all --parallel watch:lint:*",
+    "watch:lint:js": "onchange -p -v \"src/**/*.js\" -- npm run lint:js",
+    "watch:validate": "npm-run-all --parallel watch:validate:*",
+    "watch:validate:extension": "onchange -p -v \"build/extension/**/*\" -- npm run validate:extension"
+  },
+  "author": "Les Orchard <me@lmorchard.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/core": "7.0.0",
+    "@babel/plugin-proposal-class-properties": "7.0.0",
+    "@babel/plugin-proposal-object-rest-spread": "7.0.0",
+    "@babel/preset-env": "7.0.0",
+    "@babel/preset-react": "7.0.0",
+    "addons-linter": "1.3.2",
+    "babel-eslint": "9.0.0",
+    "babel-loader": "8.0.2",
+    "copy-webpack-plugin": "4.5.2",
+    "cross-env": "5.2.0",
+    "css-loader": "1.0.0",
+    "eslint": "5.5.0",
+    "eslint-plugin-babel": "5.2.0",
+    "eslint-plugin-import": "2.14.0",
+    "eslint-plugin-mozilla": "0.16.0",
+    "eslint-plugin-no-unsanitized": "3.0.2",
+    "eslint-plugin-react": "7.11.1",
+    "file-loader": "2.0.0",
+    "generate-asset-webpack-plugin": "0.3.0",
+    "html-webpack-plugin": "3.2.0",
+    "less": "3.8.1",
+    "less-loader": "4.1.0",
+    "mini-css-extract-plugin": "0.4.2",
+    "npm-run-all": "4.1.3",
+    "onchange": "4.1.0",
+    "p-queue": "3.0.0",
+    "prettier": "1.14.2",
+    "rimraf": "2.6.2",
+    "webpack": "4.17.2",
+    "webpack-cli": "3.1.0"
+  },
+  "dependencies": {
+    "react": "16.5.0",
+    "react-redux": "5.0.7",
+    "redux": "4.0.0",
+    "redux-actions": "2.6.1",
+    "redux-devtools-extension": "2.13.5",
+    "sanitize-html": "1.18.5",
+    "uuid": "3.3.2"
+  },
+  "extensionManifest": {
+    "name": "Feed Herder",
+    "permissions": [
+      "storage",
+      "tabs"
+    ],
+    "browser_action": {
+      "browser_style": true,
+      "default_title": "Feed Herder",
+      "default_icon": {
+        "32": "images/logo.svg"
+      }
+    },
+    "background": {
+      "scripts": [
+        "background.js"
+      ]
+    },
+    "content_scripts": [
+      {
+        "js": [
+          "contentScript.js"
+        ],
+        "matches": [
+          "<all_urls>"
+        ],
+        "run_at": "document_start"
+      }
+    ],
+    "icons": {
+      "32": "images/logo.svg",
+      "48": "images/logo.svg",
+      "96": "images/logo.svg",
+      "128": "images/logo.svg"
+    },
+    "applications": {
+      "gecko": {
+        "id": "FeedHerder@lmorchard.com",
+        "strict_min_version": "57.0a1"
+      }
+    }
+  }
+}

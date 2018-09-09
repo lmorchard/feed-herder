@@ -1,0 +1,12 @@
+# File types to ignore globally
+*.DS_Store
+*.sw?
+*~
+
+npm-debug.log
+
+# Directories to ignore
+*.xpi
+*.zip
+build/
+node_modules/
