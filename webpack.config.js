@@ -63,7 +63,12 @@ module.exports = {
           options: {
             cacheDirectory: true,
             presets: [
-              ["@babel/preset-env", { modules: false }],
+              [
+                "@babel/preset-env", {
+                  targets: { firefox: "57" },
+                  modules: false
+                }
+              ],
               "@babel/preset-react"
             ],
             plugins: [

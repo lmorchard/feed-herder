@@ -5,11 +5,7 @@ const {
   handleActions
 } = require("redux-actions");
 
-const actions = createActions(
-  {
-  },
-  "setLoaded"
-);
+const actions = createActions({}, "setLoaded");
 
 const selectors = {
   isLoaded: state => state.ui.loaded
@@ -18,8 +14,10 @@ const selectors = {
 const rootReducer = combineReducers({
   ui: handleActions(
     {
-      [actions.setLoaded]: (state, { payload: loaded }) =>
-        ({ ...state, loaded })
+      [actions.setLoaded]: (state, { payload: loaded }) => ({
+        ...state,
+        loaded
+      })
     },
     {
       loaded: false

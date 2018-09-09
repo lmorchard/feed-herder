@@ -7,6 +7,7 @@
     "start": "cross-env NODE_ENV=development npm run watch",
     "build": "npm-run-all --parallel build:*",
     "build:js": "cross-env NODE_ENV=production webpack -p --config webpack.config.js",
+    "run": "web-ext run --source-dir=build",
     "clean": "rimraf addon.xpi build web-ext-artifacts",
     "format": "prettier --write \"src/**/*.js\"",
     "lint": "npm-run-all lint:*",
@@ -53,10 +54,12 @@
     "p-queue": "3.0.0",
     "prettier": "1.14.2",
     "rimraf": "2.6.2",
+    "web-ext": "2.9.1",
     "webpack": "4.17.2",
     "webpack-cli": "3.1.0"
   },
   "dependencies": {
+    "pouchdb": "7.0.0",
     "react": "16.5.0",
     "react-dom": "16.5.0",
     "react-redux": "5.0.7",

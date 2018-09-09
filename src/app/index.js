@@ -24,9 +24,7 @@ function renderApp(store) {
 
   render(
     <Provider store={store}>
-      <App
-        {...{ }}
-      />
+      <App {...{}} />
     </Provider>,
     root
   );
