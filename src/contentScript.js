@@ -1,1 +1,5 @@
-console.log("FEED HERDER CONTENT SCRIPT");
+function init() {
+  console.log("FEED HERDER CONTENT SCRIPT");
+}
+
+init();
