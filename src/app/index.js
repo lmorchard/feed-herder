@@ -7,12 +7,16 @@ import { composeWithDevTools } from "redux-devtools-extension";
 
 import { rootReducer /* , actions, selectors */ } from "./store";
 
+import makeLog from "../lib/log";
+
 import "./index.less";
 
 import App from "./components/App";
 
+const log = makeLog("app/index");
+
 function init() {
-  console.log("HELLO WORLD");
+  log("HELLO WORLD");
   const store = setupStore();
   renderApp(store);
 }

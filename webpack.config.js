@@ -30,7 +30,7 @@ module.exports = {
     "app/index": "./src/app/index"
   },
   mode: isDev ? "development" : "production",
-  devtool: isDev ? "source-map" : false,
+  devtool: isDev ? "inline-source-map" : false,
   output: {
     path: path.resolve(__dirname, "build"),
     filename: "[name].js"

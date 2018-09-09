@@ -1,42 +1,43 @@
+import makeLog from "./lib/log";
+
 const { runtime } = browser;
 
+const log = makeLog("contentScript");
+
+let port = null;
+
 function init() {
-  console.log("FEED HERDER CONTENT SCRIPT");
-
-  const port = runtime.connect({ name: "feed-detect" });
-
+  port = runtime.connect({ name: "feed-detect" });
   port.onMessage.addListener(handleMessage);
-
-  port.postMessage({
-    type: "hello",
-    data: "hi from contentScript"
-  });
-
   document.addEventListener("DOMContentLoaded", handleDOMLoaded);
 }
 
+const postMessage = (type, data) => port.postMessage({ type, data });
+
 function handleDOMLoaded() {
-  // see also: https://github.com/davidhampgonsalves/foxish/blob/master/scripts/feed_finder.js#L19
-  var result = document.evaluate(
-      '//*[local-name()="link"][contains(@rel, "alternate")] ' +
-      '[contains(@type, "rss") or contains(@type, "atom") or ' +
-      'contains(@type, "rdf")]', document, null, 0, null);
-
-  var feeds = [];
-  var item;
-  // eslint-disable-next-line no-cond-assign
-  while (item = result.iterateNext()) {
-    feeds.push({"href": item.href, "title": item.title});
+  const feeds = findFeeds();
+  if (feeds.length > 0) {
+    postMessage("foundFeeds", feeds);
   }
-
-  console.log("DOCUMENT", JSON.stringify({ document, feeds }, null, " "));
 }
 
 function handleMessage(message) {
-  console.log(
+  log(
     "CONTENT SCRIPT RECEIVED MESSAGE",
     JSON.stringify({ message }, null, " ")
   );
 }
+
+// TODO: Refine this naive feed discovery
+const findFeeds = () =>
+  Array.from(
+    document.head.querySelectorAll(
+      'link[type*="rss"], link[type*="atom"], link[type*="rdf"]'
+    )
+  ).map(link => ({
+    title: link.getAttribute("title"),
+    source: window.location.toString(),
+    href: new URL(link.getAttribute("href"), window.location).toString()
+  }));
 
 init();
