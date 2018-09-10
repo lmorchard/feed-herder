@@ -25,13 +25,13 @@ async function init() {
   const config = setupConfig(process.env);
 
   const store = setupStore();
-  renderApp(store);
 
   const port = setupPort(store);
-  postMessage(port, "hello", "hi there");
 
   const db = await setupDb(config, true);
   await loadFeeds(store, db);
+
+  renderApp({ config, port, store });
 }
 
 function setupStore() {
@@ -41,19 +41,6 @@ function setupStore() {
     rootReducer,
     initialState,
     composeEnhancers(applyMiddleware(promiseMiddleware))
-  );
-}
-
-function renderApp(store) {
-  const root = document.createElement("div");
-  root.id = "root";
-  document.body.appendChild(root);
-
-  render(
-    <Provider store={store}>
-      <App {...{}} />
-    </Provider>,
-    root
   );
 }
 
@@ -98,6 +85,26 @@ const messageTypes = {
   default: async ({ port, message }) =>
     log.warn("Unimplemented message", message)
 };
+
+function renderApp({ config, port, store }) {
+  const startHistoryScan = () => {
+    postMessage(port, "startHistoryScan");
+  };
+
+  const root = document.createElement("div");
+  root.id = "root";
+  document.body.appendChild(root);
+
+  render(
+    <Provider store={store}>
+      <App {...{
+        config,
+        startHistoryScan,
+      }} />
+    </Provider>,
+    root
+  );
+}
 
 init()
   .then(() => log.debug("init() end"))

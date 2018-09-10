@@ -8,6 +8,8 @@ const log = setupLog("contentScript");
 let port = null;
 
 function init() {
+  // TODO: switch from port to just one-way message to background?
+  // depends on if this contentScript ever does anything else in content
   port = runtime.connect({ name: "feedDetect" });
   port.onMessage.addListener(handleMessage);
   document.addEventListener("DOMContentLoaded", handleDOMLoaded);
@@ -23,10 +25,7 @@ function handleDOMLoaded() {
 }
 
 function handleMessage(message) {
-  log(
-    "CONTENT SCRIPT RECEIVED MESSAGE",
-    JSON.stringify({ message }, null, " ")
-  );
+  log("Unimplemented message", JSON.stringify({ message }, null, " "));
 }
 
 init();

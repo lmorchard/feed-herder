@@ -1,6 +1,6 @@
 import setupConfig from "./lib/config";
 import setupLog from "./lib/log";
-import setupDb, { feedId } from "./lib/db";
+import setupDb, { feedId, updateFoundFeed } from "./lib/db";
 
 const { browserAction, tabs, runtime } = browser;
 
@@ -8,6 +8,7 @@ const config = setupConfig(process.env);
 const log = setupLog("background");
 
 let db;
+let stats = {};
 
 const ports = {
   appPage: {},
@@ -40,9 +41,8 @@ const broadcastMessage = (name, type, data) =>
     .forEach(port => postMessage(port, type, data));
 
 function updateStats() {
-  broadcastMessage("appPage", "updateStats", {
-    time: Date.now()
-  });
+  stats.time = Date.now();
+  broadcastMessage("appPage", "updateStats", stats);
 }
 
 function handleConnect(port) {
@@ -71,42 +71,15 @@ function handleMessage({ port, message }) {
 const messageTypes = {
   foundFeeds: async ({ data: feeds }) => {
     for (let feed of feeds) {
-      updateFoundFeed(feed);
+      updateFoundFeed(db, feed);
     }
+  },
+  startHistoryScan: async () => {
+    stats.scans = (stats.scans || 0) + 1 
   },
   default: async ({ port, id, message }) =>
     log.warn("Unimplemented message", message)
 };
-
-async function updateFoundFeed({ title, href, source, sourceTitle }) {
-  const _id = feedId({ href });
-
-  let record;
-  try {
-    record = await db.get(_id);
-  } catch (e) {
-    record = { _id, href, type: "feed", count: 0, sources: {} };
-  }
-
-  record.title = title;
-  record.count++;
-  if (record.sources[source]) {
-    record.sources[source].title = sourceTitle;
-    record.sources[source].count++;
-  } else {
-    record.sources[source] = {
-      title: sourceTitle,
-      count: 1
-    };
-  }
-
-  try {
-    const result = await db.put(record);
-    log.info("Updated feed", record, result);
-  } catch (e) {
-    log.error("Feed update failure", e, record);
-  }
-}
 
 init()
   .then(() => log.debug("init() end"))
