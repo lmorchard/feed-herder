@@ -13,13 +13,14 @@ const log = setupLog("components/App");
 
 import "./index.less";
 
-export const App = ({ feeds, isLoaded }) => {
+export const App = ({ feeds, stats, isLoaded }) => {
   const feedsSorted = Object.entries(feeds()).sort((a, b) =>
     desc(a[1].count, b[1].count)
   );
   return (
     <div>
       <h1>Feed Herder</h1>
+      <p>{JSON.stringify(stats())}</p>
       {!isLoaded() && <p>Loading...</p>}
       {isLoaded() && (
         <ul>

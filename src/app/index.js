@@ -15,6 +15,8 @@ import "./index.less";
 
 import App from "./components/App";
 
+const { runtime } = browser;
+
 const log = setupLog("app/index");
 
 async function init() {
@@ -25,26 +27,11 @@ async function init() {
   const store = setupStore();
   renderApp(store);
 
+  const port = setupPort(store);
+  postMessage(port, "hello", "hi there");
+
   const db = await setupDb(config, true);
   await loadFeeds(store, db);
-}
-
-async function loadFeeds(store, db) {
-  const feeds = await queryFeeds(db);
-  store.dispatch(actions.loadFeeds(feeds));
-
-  db.changes({ since: "now", live: true, include_docs: true })
-    .on("change", change => {
-      const { doc, id } = change;
-      if (doc.type === "feed") {
-        if (change.deleted) {
-          store.dispatch(actions.deleteFeed(id));
-        } else {
-          store.dispatch(actions.updateFeed(doc));
-        }
-      }
-    })
-    .on("error", err => log.error("db.changes error", err));
 }
 
 function setupStore() {
@@ -69,6 +56,48 @@ function renderApp(store) {
     root
   );
 }
+
+async function loadFeeds(store, db) {
+  const feeds = await queryFeeds(db);
+  store.dispatch(actions.loadFeeds(feeds));
+
+  db.changes({ since: "now", live: true, include_docs: true })
+    .on("change", change => {
+      const { doc, id } = change;
+      if (doc.type === "feed") {
+        if (change.deleted) {
+          store.dispatch(actions.deleteFeed(id));
+        } else {
+          store.dispatch(actions.updateFeed(doc));
+        }
+      }
+    })
+    .on("error", err => log.error("db.changes error", err));
+}
+
+const postMessage = (port, type, data) => port.postMessage({ type, data });
+
+function setupPort(store) {
+  const port = runtime.connect({ name: "appPage" });
+  port.onMessage.addListener(message =>
+    handleMessage({ store, port, message }));
+  return port;
+}
+
+function handleMessage({ store, port, message }) {
+  const { type, data } = message;
+  const handler =
+    type in messageTypes ? messageTypes[type] : messageTypes.default;
+  handler({ store, port, message, type, data })
+    .catch(err => log.error('handleMessage error', err));
+}
+
+const messageTypes = {
+  updateStats: async ({ store, data: stats }) =>
+    store.dispatch(actions.updateStats(stats)),
+  default: async ({ port, message }) =>
+    log.warn("Unimplemented message", message)
+};
 
 init()
   .then(() => log.debug("init() end"))

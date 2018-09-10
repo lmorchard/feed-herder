@@ -8,7 +8,7 @@ const log = setupLog("contentScript");
 let port = null;
 
 function init() {
-  port = runtime.connect({ name: "feed-detect" });
+  port = runtime.connect({ name: "feedDetect" });
   port.onMessage.addListener(handleMessage);
   document.addEventListener("DOMContentLoaded", handleDOMLoaded);
 }

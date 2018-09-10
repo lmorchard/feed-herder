@@ -9,6 +9,11 @@ const log = setupLog("background");
 
 let db;
 
+const ports = {
+  appPage: {},
+  feedDetect: {}
+};
+
 async function init() {
   log.debug("init()");
 
@@ -24,10 +29,35 @@ async function init() {
   });
 
   runtime.onConnect.addListener(handleConnect);
+
+  setInterval(updateStats, 1000);
+}
+
+const postMessage = (port, type, data) => port.postMessage({ type, data });
+
+const broadcastMessage = (name, type, data) =>
+  Object.values(ports[name])
+    .forEach(port => postMessage(port, type, data));
+
+function updateStats() {
+  broadcastMessage("appPage", "updateStats", {
+    time: Date.now()
+  });
 }
 
 function handleConnect(port) {
-  port.onMessage.addListener(message => handleMessage({ port, message }));
+  const id = port.sender.tab.id;
+  
+  log.debug("port connected", port.name, id);
+  ports[port.name][id] = port;
+
+  port.onMessage.addListener(message =>
+    handleMessage({ port, message }));
+  
+  port.onDisconnect.addListener(() => {
+    delete ports[port.name][id];
+    log.debug("port disconnected", port.name);
+  });
 }
 
 function handleMessage({ port, message }) {

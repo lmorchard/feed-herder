@@ -5,11 +5,12 @@ const {
   handleActions
 } = require("redux-actions");
 
-const actions = createActions({}, "loadFeeds", "deleteFeed", "updateFeed");
+const actions = createActions({}, "loadFeeds", "deleteFeed", "updateFeed", "updateStats");
 
 const selectors = {
   isLoaded: state => state.feeds.loaded,
-  feeds: state => state.feeds.feeds
+  feeds: state => state.feeds.feeds,
+  stats: state => state.stats,
 };
 
 const rootReducer = combineReducers({
@@ -33,6 +34,16 @@ const rootReducer = combineReducers({
     {
       feeds: {},
       loaded: false
+    }
+  ),
+  stats: handleActions(
+    {
+      [actions.updateStats]: (state, { payload: stats }) => ({
+        ...state, stats
+      })
+    },
+    {
+      stats: {}
     }
   )
 });
