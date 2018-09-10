@@ -13,3 +13,10 @@ export default async function(config, init = false) {
 }
 
 export const feedId = ({ href }) => `feed|${href}`;
+
+export const queryFeeds = async db =>
+  (await db.allDocs({
+    include_docs: true,
+    startkey: "feed|",
+    endkey: "feed|\ufff0"
+  })).rows.map(row => row.doc);

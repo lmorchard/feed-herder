@@ -36,7 +36,7 @@ const findFeeds = () =>
     )
   ).map(link => ({
     title: link.getAttribute("title"),
-    sourceTitle: window.title,
+    sourceTitle: document.title,
     source: window.location.toString(),
     href: new URL(link.getAttribute("href"), window.location).toString()
   }));

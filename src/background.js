@@ -77,4 +77,6 @@ async function updateFoundFeed({ title, href, source, sourceTitle }) {
   }
 }
 
-init().then(() => log.debug("init() end"));
+init()
+  .then(() => log.debug("init() end"))
+  .catch(err => log.error("init() error", err));
