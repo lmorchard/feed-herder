@@ -16,6 +16,7 @@ async function init() {
 
   browserAction.onClicked.addListener(() => {
     // TODO: detect existing tab and make active instead of creating
+    // see - https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/extension/getViews
     tabs.create({
       active: true,
       url: "/app/index.html"

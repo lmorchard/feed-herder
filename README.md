@@ -2,7 +2,8 @@
 
 ## TODO
 
-* auto-detect feeds in background, store in local DB
+* create a sidebar with dashboard & UI
+* scan browser history for feeds
 * page with report on feed encounters ranked by frequency
 * poll feeds
 * offer feed item display in frecency order
