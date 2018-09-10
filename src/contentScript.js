@@ -1,8 +1,8 @@
-import makeLog from "./lib/log";
+import setupLog from "./lib/log";
 
 const { runtime } = browser;
 
-const log = makeLog("contentScript");
+const log = setupLog("contentScript");
 
 let port = null;
 
@@ -36,6 +36,7 @@ const findFeeds = () =>
     )
   ).map(link => ({
     title: link.getAttribute("title"),
+    sourceTitle: window.title,
     source: window.location.toString(),
     href: new URL(link.getAttribute("href"), window.location).toString()
   }));

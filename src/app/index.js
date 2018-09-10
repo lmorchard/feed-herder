@@ -5,20 +5,60 @@ import { Provider } from "react-redux";
 import promiseMiddleware from "redux-promise";
 import { composeWithDevTools } from "redux-devtools-extension";
 
-import { rootReducer /* , actions, selectors */ } from "./store";
+import { rootReducer, actions /* , selectors */ } from "./store";
 
-import makeLog from "../lib/log";
+import setupConfig from "../lib/config";
+import setupLog from "../lib/log";
+import setupDb from "../lib/db";
 
 import "./index.less";
 
 import App from "./components/App";
 
-const log = makeLog("app/index");
+const config = setupConfig(process.env);
+const log = setupLog(config, "app/index");
 
-function init() {
-  log("HELLO WORLD");
+async function init() {
+  log.debug("init() start");
+
   const store = setupStore();
   renderApp(store);
+
+  const db = await setupDb(config, true);
+  await loadFeeds(store, db);
+}
+
+async function loadFeeds(store, db) {
+  const feeds = (await db.allDocs({ include_docs: true })).rows
+    .map(row => row.doc)
+    .filter(doc => doc.type == "feed");
+
+  store.dispatch(actions.loadFeeds(feeds));
+
+  db.changes({ since: "now", live: true, include_docs: true })
+    .on("change", change => {
+      const { doc, id } = change;
+      if (change.deleted) {
+        store.dispatch(actions.deleteFeed(id));
+      } else {
+        store.dispatch(actions.updateFeed(doc));
+      }
+    })
+    .on("error", err => {
+      // handle errors
+    });
+}
+
+function setupStore() {
+  const composeEnhancers = composeWithDevTools({});
+
+  const initialState = {};
+
+  return createStore(
+    rootReducer,
+    initialState,
+    composeEnhancers(applyMiddleware(promiseMiddleware))
+  );
 }
 
 function renderApp(store) {
@@ -34,16 +74,6 @@ function renderApp(store) {
   );
 }
 
-function setupStore() {
-  const composeEnhancers = composeWithDevTools({});
-
-  const initialState = {};
-
-  return createStore(
-    rootReducer,
-    initialState,
-    composeEnhancers(applyMiddleware(promiseMiddleware))
-  );
-}
-
-init();
+init()
+  .then(() => log.debug("init() end"))
+  .catch(err => log.error("init() error", err));

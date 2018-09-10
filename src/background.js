@@ -1,15 +1,18 @@
-import makeLog from "./lib/log";
-import PouchDB from "pouchdb";
+import setupConfig from "./lib/config";
+import setupLog from "./lib/log";
+import setupDb, { feedId } from "./lib/db";
 
 const { browserAction, tabs, runtime } = browser;
 
-const log = makeLog("background");
+const config = setupConfig(process.env);
+const log = setupLog("background");
+
 let db;
 
 async function init() {
   log.debug("init()");
 
-  db = new PouchDB("feedherder");
+  db = await setupDb(config, true);
 
   browserAction.onClicked.addListener(() => {
     // TODO: detect existing tab and make active instead of creating
@@ -24,24 +27,17 @@ async function init() {
 
 function handleConnect(port) {
   port.onMessage.addListener(message => handleMessage({ port, message }));
-
-  port.postMessage({
-    type: "hello",
-    data: "hi from background"
-  });
 }
 
 function handleMessage({ port, message }) {
   const id = port.sender.tab.id;
   const { type, data } = message;
   const handler =
-    type in messageHandlers ? messageHandlers[type] : messageHandlers.default;
-  handler({ port, id, message, type, data }).then(() => {
-    /* no-op */
-  });
+    type in messageTypes ? messageTypes[type] : messageTypes.default;
+  handler({ port, id, message, type, data }).catch(err => log.error(err));
 }
 
-const messageHandlers = {
+const messageTypes = {
   foundFeeds: async ({ data: feeds }) => {
     for (let feed of feeds) {
       updateFoundFeed(feed);
@@ -51,17 +47,27 @@ const messageHandlers = {
     log.warn("Unimplemented message", message)
 };
 
-async function updateFoundFeed({ title, source, href }) {
+async function updateFoundFeed({ title, href, source, sourceTitle }) {
+  const _id = feedId({ href });
+
   let record;
   try {
-    record = await db.get(href);
+    record = await db.get(_id);
   } catch (e) {
-    record = { _id: href, href, type: "feed", count: 0, sources: {} };
+    record = { _id, href, type: "feed", count: 0, sources: {} };
   }
 
   record.title = title;
   record.count++;
-  record.sources[source] = 1 + (record.sources[source] || 0);
+  if (record.sources[source]) {
+    record.sources[source].title = sourceTitle;
+    record.sources[source].count++;
+  } else {
+    record.sources[source] = {
+      title: sourceTitle,
+      count: 1
+    };
+  }
 
   try {
     const result = await db.put(record);

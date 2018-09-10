@@ -21,6 +21,11 @@ const {
   NODE_ENV = "development"
 } = process.env;
 
+// Safe subset of environment vars to be passed to build.
+const configEnv = {
+  NODE_ENV
+};
+
 const isDev = NODE_ENV === "development";
 
 module.exports = {
@@ -37,6 +42,7 @@ module.exports = {
   },
   plugins: [
     new webpack.DefinePlugin({
+      "process.env": JSON.stringify(configEnv),
       "process.env.NODE_ENV": `"${NODE_ENV}"`
     }),
     new MiniCssExtractPlugin(),
