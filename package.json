@@ -89,6 +89,7 @@
         "background.js"
       ]
     },
+    "content_security_policy": "script-src 'self eval'; object-src 'self';",
     "content_scripts": [
       {
         "js": [
