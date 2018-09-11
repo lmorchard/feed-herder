@@ -3,12 +3,15 @@ import PouchDB from "pouchdb";
 import setupLog from "./log";
 const log = setupLog("lib/db");
 
+let db;
+
 export default async function(config, init = false) {
   log.debug("setupDb");
-
-  const db = new PouchDB("feedherder");
+  db = new PouchDB("feedherder");
   return db;
 }
+
+export const getDb = () => db;
 
 export const feedId = ({ href }) => `feed|${href}`;
 
@@ -19,7 +22,10 @@ export const queryFeeds = async db =>
     endkey: "feed|\ufff0"
   })).rows.map(row => row.doc);
 
-export async function updateFoundFeed(db, { title, href, source, sourceTitle }) {
+export async function updateFoundFeed(
+  db,
+  { title, href, sourceUrl, sourceTitle }
+) {
   const _id = feedId({ href });
 
   let record;
@@ -29,21 +35,20 @@ export async function updateFoundFeed(db, { title, href, source, sourceTitle }) 
     record = { _id, href, type: "feed", count: 0, sources: {} };
   }
 
+  const source =
+    sourceUrl in record.sources
+      ? record.sources[sourceUrl]
+      : (record.sources[sourceUrl] = { count: 0 });
+
   record.title = title;
   record.count++;
-  if (record.sources[source]) {
-    record.sources[source].title = sourceTitle;
-    record.sources[source].count++;
-  } else {
-    record.sources[source] = {
-      title: sourceTitle,
-      count: 1
-    };
-  }
+
+  source.title = sourceTitle;
+  source.count++;
 
   try {
-    const result = await db.put(record);
-    log.info("Updated feed", record, result);
+    await db.put(record);
+    log.info("Updated feed", record._id);
   } catch (e) {
     log.error("Feed update failure", e, record);
   }

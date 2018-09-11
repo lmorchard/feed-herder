@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Component } from "react";
 import { connect } from "react-redux";
 import {
   mapActionsToDispatchProps,
@@ -13,33 +13,72 @@ const log = setupLog("components/App");
 
 import "./index.less";
 
-export const App = ({ startHistoryScan, feeds, stats, isLoaded }) => {
-  const feedsSorted = Object.entries(feeds()).sort((a, b) =>
-    desc(a[1].count, b[1].count)
-  );
+export const App = ({
+  startHistoryScan,
+  clearQueues,
+  pauseQueues,
+  startQueues,
+  feeds,
+  stats,
+  isLoaded
+}) => {
+  const feedsSorted = Object.values(feeds())
+    .filter(item => item.count > 1)
+    .sort((a, b) => desc(a.count, b.count));
   return (
     <div>
       <h1>Feed Herder</h1>
       <p>{JSON.stringify(stats())}</p>
-      <p><button onClick={startHistoryScan}>Start history scan</button></p>
+      <p>
+        <button onClick={startHistoryScan}>Start history scan</button>
+        <button onClick={pauseQueues}>Pause</button>
+        <button onClick={startQueues}>Start</button>
+        <button onClick={clearQueues}>Clear</button>
+      </p>
       {!isLoaded() && <p>Loading...</p>}
       {isLoaded() && (
         <ul>
-          {feedsSorted.map(([_id, { href, title, count, sources }], idx) => (
-            <li key={idx}>
-              <p><a href={href}>{title || href}</a> ({count})</p>
-              <ul>
-                {Object.entries(sources).map(([ url, { count, title }], idx) => (
-                  <li key={idx}><a href={url}>{ title || url }</a> ({count})</li>
-                ))}
-              </ul>
-            </li>
+          {feedsSorted.map((feed, idx) => (
+            <Feed {...feed} key={idx} />
           ))}
         </ul>
       )}
     </div>
   );
 };
+
+class Feed extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      expanded: false
+    };
+  }
+
+  handleExpand = () => this.setState({ expanded: !this.state.expanded });
+
+  render() {
+    const { href, title, count, sources } = this.props;
+    const { expanded } = this.state;
+    return (
+      <li>
+        <p>
+          <button onClick={this.handleExpand}>{expanded ? "-" : "+"}</button>{" "}
+          <a href={href}>{title || href}</a> ({count})
+        </p>
+        {expanded && (
+          <ul>
+            {Object.entries(sources).map(([url, { count, title }], idx) => (
+              <li key={idx}>
+                <a href={url}>{title || url}</a> ({count})
+              </li>
+            ))}
+          </ul>
+        )}
+      </li>
+    );
+  }
+}
 
 export default connect(
   mapSelectorsToStateProps,

@@ -18,7 +18,7 @@ function init() {
 const postMessage = (type, data) => port.postMessage({ type, data });
 
 function handleDOMLoaded() {
-  const feeds = findFeeds(document);
+  const feeds = findFeeds(window.location.toString(), document.title, document);
   if (feeds.length > 0) {
     postMessage("foundFeeds", feeds);
   }

@@ -1,6 +1,8 @@
 import setupConfig from "./lib/config";
 import setupLog from "./lib/log";
-import setupDb, { feedId, updateFoundFeed } from "./lib/db";
+import setupDb, { updateFoundFeed } from "./lib/db";
+import setupQueues, { queues, queueStats, clearQueues, pauseQueues, startQueues } from "./lib/queues";
+import { queryAllHistory, scanUrl } from "./historyScan";
 
 const { browserAction, tabs, runtime } = browser;
 
@@ -8,7 +10,6 @@ const config = setupConfig(process.env);
 const log = setupLog("background");
 
 let db;
-let stats = {};
 
 const ports = {
   appPage: {},
@@ -17,8 +18,6 @@ const ports = {
 
 async function init() {
   log.debug("init()");
-
-  db = await setupDb(config, true);
 
   browserAction.onClicked.addListener(() => {
     // TODO: detect existing tab and make active instead of creating
@@ -29,31 +28,33 @@ async function init() {
     });
   });
 
+  db = await setupDb(config, true);
+  setupQueues(config);
   runtime.onConnect.addListener(handleConnect);
 
-  setInterval(updateStats, 1000);
+  setInterval(updateStats, 500);
 }
 
 const postMessage = (port, type, data) => port.postMessage({ type, data });
 
 const broadcastMessage = (name, type, data) =>
-  Object.values(ports[name])
-    .forEach(port => postMessage(port, type, data));
+  Object.values(ports[name]).forEach(port => postMessage(port, type, data));
 
 function updateStats() {
-  stats.time = Date.now();
-  broadcastMessage("appPage", "updateStats", stats);
+  broadcastMessage("appPage", "updateStats", {
+    time: Date.now(),
+    queue: queueStats()
+  });
 }
 
 function handleConnect(port) {
   const id = port.sender.tab.id;
-  
+
   log.debug("port connected", port.name, id);
   ports[port.name][id] = port;
 
-  port.onMessage.addListener(message =>
-    handleMessage({ port, message }));
-  
+  port.onMessage.addListener(message => handleMessage({ port, message }));
+
   port.onDisconnect.addListener(() => {
     delete ports[port.name][id];
     log.debug("port disconnected", port.name);
@@ -74,8 +75,17 @@ const messageTypes = {
       updateFoundFeed(db, feed);
     }
   },
+  startQueues: async () => startQueues(),
+  pauseQueues: async () => pauseQueues(),
+  clearQueues: async () => clearQueues(),
   startHistoryScan: async () => {
-    stats.scans = (stats.scans || 0) + 1 
+    const items = await queryAllHistory({
+      maxResults: 10000,
+      maxAge: 1000 * 60 * 60 * 24 * 14
+    });
+    items.forEach(({ url }) => {
+      queues.discovery.add(() => scanUrl({ db, url }));
+    });
   },
   default: async ({ port, id, message }) =>
     log.warn("Unimplemented message", message)

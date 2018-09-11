@@ -1,13 +1,12 @@
 // TODO: Refine this naive feed discovery
-export const findFeeds = document =>
+export const findFeeds = (sourceUrl, sourceTitle, document) =>
   Array.from(
     document.head.querySelectorAll(
       'link[type*="rss"], link[type*="atom"], link[type*="rdf"]'
     )
   ).map(link => ({
+    sourceUrl,
+    sourceTitle,
     title: link.getAttribute("title"),
-    sourceTitle: document.title,
-    source: window.location.toString(),
-    href: new URL(link.getAttribute("href"), window.location).toString()
+    href: new URL(link.getAttribute("href"), sourceUrl).toString()
   }));
-

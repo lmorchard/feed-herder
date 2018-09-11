@@ -1,3 +1,6 @@
+import { findFeeds } from "./lib/feeds";
+import { updateFoundFeed } from "./lib/db";
+
 const { history } = browser;
 
 const DEFAULT_MAX_RESULTS = 100000;
@@ -15,7 +18,13 @@ export async function queryAllHistory({
   });
 }
 
-/*
-fetch(things[10000].url).then(response => Promise.all([ response.status, response.text() ])).then(([status, text]) => { console.log(status, text); const parser = new DOMParser(); const doc = parser.parseFromString(text, "text/html"); window.thingDoc = doc.head.querySelectorAll('link[type*="rss"], link[type*="atom"], link[type*="rdf"]'); console.log(window.thingDoc) })
-
-*/
+export async function scanUrl({ db, url }) {
+  const response = await fetch(url);
+  const text = await response.text();
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(text, "text/html");
+  const feeds = findFeeds(url, doc.title, doc);
+  for (let feed of feeds) {
+    updateFoundFeed(db, feed);
+  }
+}

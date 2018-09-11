@@ -23,11 +23,8 @@ async function init() {
   log.debug("init() start");
 
   const config = setupConfig(process.env);
-
   const store = setupStore();
-
   const port = setupPort(store);
-
   const db = await setupDb(config, true);
   await loadFeeds(store, db);
 
@@ -67,7 +64,8 @@ const postMessage = (port, type, data) => port.postMessage({ type, data });
 function setupPort(store) {
   const port = runtime.connect({ name: "appPage" });
   port.onMessage.addListener(message =>
-    handleMessage({ store, port, message }));
+    handleMessage({ store, port, message })
+  );
   return port;
 }
 
@@ -75,8 +73,9 @@ function handleMessage({ store, port, message }) {
   const { type, data } = message;
   const handler =
     type in messageTypes ? messageTypes[type] : messageTypes.default;
-  handler({ store, port, message, type, data })
-    .catch(err => log.error('handleMessage error', err));
+  handler({ store, port, message, type, data }).catch(err =>
+    log.error("handleMessage error", err)
+  );
 }
 
 const messageTypes = {
@@ -87,9 +86,10 @@ const messageTypes = {
 };
 
 function renderApp({ config, port, store }) {
-  const startHistoryScan = () => {
-    postMessage(port, "startHistoryScan");
-  };
+  const clearQueues = () => postMessage(port, "clearQueues");
+  const pauseQueues = () => postMessage(port, "pauseQueues");
+  const startQueues = () => postMessage(port, "startQueues");
+  const startHistoryScan = () => postMessage(port, "startHistoryScan");
 
   const root = document.createElement("div");
   root.id = "root";
@@ -97,10 +97,15 @@ function renderApp({ config, port, store }) {
 
   render(
     <Provider store={store}>
-      <App {...{
-        config,
-        startHistoryScan,
-      }} />
+      <App
+        {...{
+          config,
+          clearQueues,
+          pauseQueues,
+          startQueues,
+          startHistoryScan
+        }}
+      />
     </Provider>,
     root
   );
