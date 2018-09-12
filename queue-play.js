@@ -118,11 +118,10 @@ class Runner {
   }
 
   next() {
-    if (!this.isRunning) {
-      return;
-    }
-
-    if (this.pendingCount >= this.concurrency) {
+    if (
+      !this.isRunning ||
+      this.pendingCount >= this.concurrency
+    ) {
       return;
     }
 
@@ -131,30 +130,28 @@ class Runner {
       if (!this.isEmpty) {
         this.isEmpty = true;
         this.onEmpty();
+      } else if (!this.isDone && this.pendingCount === 0) {
+        this.isDone = true;
+        this.onDone();
       }
       return;
     }
 
     const taskId = this.nextTaskId++;
     this.pending[taskId] = task;
+
+    const complete = cb => result => {
+      delete this.pending[taskId];
+      cb(result, task, taskId);
+      this.next();
+    };
+
     this.onTask(task).then(
-      this._complete(task, taskId, this.onResolve),
-      this._complete(task, taskId, this.onReject)
+      complete(this.onResolve),
+      complete(this.onReject)
     );
 
     this.next();
-  }
-
-  _complete(task, taskId, cb) {
-    return result =>
-      Promise.resolve(cb(result, task, taskId)).then(() => {
-        this.next();
-        delete this.pending[taskId];
-        if (this.isEmpty && this.pendingCount === 0) {
-          this.isDone = true;
-          this.onDone();
-        }
-      });
   }
 }
 
