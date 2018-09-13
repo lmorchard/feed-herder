@@ -22,9 +22,13 @@ export const queryFeeds = async db =>
     endkey: "feed|\ufff0"
   })).rows.map(row => row.doc);
 
+export const queryFeedsBySource = async (db, url) =>
+  (await queryFeeds(db)).filter(record => url in record.sources);
+
 export async function updateFoundFeed(
   db,
-  { title, href, sourceUrl, sourceTitle }
+  { title, href, sourceUrl, sourceTitle },
+  visitCount = 1
 ) {
   const _id = feedId({ href });
 
@@ -41,10 +45,10 @@ export async function updateFoundFeed(
       : (record.sources[sourceUrl] = { count: 0 });
 
   record.title = title;
-  record.count++;
+  record.count += visitCount;
 
   source.title = sourceTitle;
-  source.count++;
+  source.count += visitCount;
 
   try {
     await db.put(record);

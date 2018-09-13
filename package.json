@@ -59,6 +59,7 @@
     "webpack-cli": "3.1.0"
   },
   "dependencies": {
+    "async": "2.6.1",
     "pouchdb": "7.0.0",
     "pouchdb-find": "7.0.0",
     "react": "16.5.0",

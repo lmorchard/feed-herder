@@ -15,6 +15,7 @@ import "./index.less";
 
 export const App = ({
   startHistoryScan,
+  setQueueConcurrency,
   clearQueues,
   pauseQueues,
   startQueues,
@@ -23,7 +24,7 @@ export const App = ({
   isLoaded
 }) => {
   const feedsSorted = Object.values(feeds())
-    .filter(item => item.count > 1)
+    .filter(item => item.count > 2)
     .sort((a, b) => desc(a.count, b.count));
   return (
     <div>
@@ -34,6 +35,7 @@ export const App = ({
         <button onClick={pauseQueues}>Pause</button>
         <button onClick={startQueues}>Start</button>
         <button onClick={clearQueues}>Clear</button>
+        <input type="input" onChange={ev => setQueueConcurrency(ev.target.value)} defaultValue="16" />
       </p>
       {!isLoaded() && <p>Loading...</p>}
       {isLoaded() && (

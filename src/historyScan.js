@@ -1,5 +1,8 @@
+import setupLog from "./lib/log";
 import { findFeeds } from "./lib/feeds";
-import { updateFoundFeed } from "./lib/db";
+import { updateFoundFeed, queryFeedsBySource } from "./lib/db";
+
+const log = setupLog("historyScan");
 
 const { history } = browser;
 
@@ -18,13 +21,22 @@ export async function queryAllHistory({
   });
 }
 
-export async function scanUrl({ db, url }) {
+export async function scanUrl({ db, url, title = null, visitCount = 1 }) {
+  log.debug("scanUrl", url);
+
+  // Skip any URLs already identified as sources in feeds
+  const existing = await queryFeedsBySource(db, url);
+  if (existing.length > 0) { 
+    log.debug("Skip scan for", url);
+    return;
+  }
+
   const response = await fetch(url);
   const text = await response.text();
   const parser = new DOMParser();
   const doc = parser.parseFromString(text, "text/html");
-  const feeds = findFeeds(url, doc.title, doc);
+  const feeds = findFeeds(url, title || doc.title, doc);
   for (let feed of feeds) {
-    updateFoundFeed(db, feed);
+    updateFoundFeed(db, feed, visitCount);
   }
 }

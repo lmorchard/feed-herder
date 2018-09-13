@@ -90,6 +90,7 @@ function renderApp({ config, port, store }) {
   const pauseQueues = () => postMessage(port, "pauseQueues");
   const startQueues = () => postMessage(port, "startQueues");
   const startHistoryScan = () => postMessage(port, "startHistoryScan");
+  const setQueueConcurrency = num => postMessage(port, "setQueueConcurrency", num);
 
   const root = document.createElement("div");
   root.id = "root";
@@ -103,7 +104,8 @@ function renderApp({ config, port, store }) {
           clearQueues,
           pauseQueues,
           startQueues,
-          startHistoryScan
+          startHistoryScan,
+          setQueueConcurrency,
         }}
       />
     </Provider>,
